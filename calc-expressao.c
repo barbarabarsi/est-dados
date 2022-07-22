@@ -2,31 +2,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAM 1000
+#define TAM 100
 
-typedef union uniaoDados{
-    char operador;  
-    int numero; 
-} uniaoDados;
-
-typedef struct _noStack {  
-    int tipoDado;
-    uniaoDados dado;
-} noStack;   
-
-typedef struct _stack { 
+typedef struct _stackInt { 
     int topo;
-    noStack *elementos;
-} stack;  
+    int numero[TAM];
+} stackInt;  
+
+typedef struct _stackChar { 
+    int topo;
+    char caractere[TAM];
+} stackChar;  
+
+void initInt(stackInt *pilha){
+    pilha->topo = -1;
+}
+
+void initChar(stackChar *pilha){
+    pilha->topo = -1;
+}
 
 int verOper(char charLido){
     char operadores[] = "+-*/()";
-    for(int i = 0; i<4; i++) if(charLido == operadores[i]) return 1;
-    if(charLido == operadores[4]) return 2;
-    if(charLido == operadores[5]) return 3;
+    for(int i = 0; i<6; i++) if(charLido == operadores[i]) return 1;
     return 0;
 }
-
 
 int contaAlg(int numero){
     int algarismos=0;
@@ -38,135 +38,131 @@ int contaAlg(int numero){
 }  
 
 int calcula(int num1, int num2, char oper){
-    
     if(oper == '+') return num1 + num2;
     else if(oper == '-') return num1 - num2;
     else if(oper == '*') return num1 * num2;
-    else if(oper == '/') return num1 / num2;
-  
+    else if(oper == '/') return num1 / num2; 
 }
 
+char* removeEspaco(char *string){
 
-void init(stack *pilha){
-    pilha->elementos = malloc (sizeof(uniaoDados));
-    pilha->topo = -1;
+    int tamanhoReal = 0;
+    int j = 0;
+
+    for(int i=0; i<strlen(string); i++) if(string[i] != ' ') tamanhoReal++;
+
+    char *stringProv = (char*) calloc(tamanhoReal, sizeof(char));
+
+    for(int i=0; i<strlen(string); i++){
+        if(string[i] != ' '){
+            stringProv[j] = string[i];
+            j++;
+        }
+    }
+    return stringProv;
 }
 
-void push(stack *pilha, uniaoDados input, int tipo){
-    
+void pushInt(stackInt *pilha, int input){
     pilha->topo++;
-    pilha->elementos[pilha->topo].dado = input;
-    if(tipo == 1) pilha->elementos[pilha->topo].tipoDado = 1;
-    else pilha->elementos[pilha->topo].tipoDado = 2;
+    pilha->numero[pilha->topo] = input;
 }
 
-uniaoDados pop(stack *pilha){
+void pushChar(stackChar *pilha, char input){  
+    pilha->topo++;
+    pilha->caractere[pilha->topo] = input;
+}
+
+int popInt(stackInt *pilha){
     if (pilha->topo == -1){
-        printf("underflow");
+        printf("Erro! Ocorreu um underflow na pilha. Encerrando programa.");
         exit(1);
     } 
-    return pilha->elementos[(pilha->topo)--].dado;
+    return pilha->numero[(pilha->topo)--];
 } 
 
-stack* inverte(stack *pilha) {
-    stack *outra = (stack*) malloc (sizeof(stack));
-    init(outra);
-    while (pilha->topo != -1) {
-        
-        outra->elementos[outra->topo] = pilha->elementos[pilha->topo];
-        pilha->topo--;
-        outra->topo++;
-    }
-    return outra;
+int popChar(stackChar *pilha){
+    if (pilha->topo == -1){
+        printf("Erro! Ocorreu um underflow na pilha. Encerrando programa.");
+        exit(1);
+    } 
+    return pilha->caractere[(pilha->topo)--];
+} 
+
+int buscaElem(char busca, stackChar *pilha){
+    for(int i = pilha->topo; i>0; i--){
+        if(pilha->caractere[i] == busca) return 1;
+    } 
+    return 0;
 }
+
 
 int main(){
-    stack *pilha = (stack*) malloc (sizeof(stack));
-    stack *pilhaTemp = (stack*) malloc (sizeof(stack));
-    init(pilha);
-    init(pilhaTemp);
-    uniaoDados leitura;
+
+    int leitura;
     int num1;
     int num2;
-    int oper;
-    char *entrada = "3*8";
+    char oper;
     int salto = 1;
-    int i = 0;
+    char *entrada = (char*) malloc (TAM * sizeof(char));
+    char *teste = (char*) malloc (TAM * sizeof(char));
 
-    printf("Entrada original: %s\n\n", entrada);
+    fgets(entrada, TAM, stdin);
+
+    stackInt *pilhaInt = (stackInt*) malloc (sizeof(stackInt));
+    stackChar *pilhaChar = (stackChar*) malloc (sizeof(stackChar));
+    initInt(pilhaInt);
+    initChar(pilhaChar);
+    
+    entrada = removeEspaco(entrada);
 
     while(strlen(entrada)>0){
+
         if(!verOper(entrada[0])){
-            sscanf(entrada, "%d", &leitura.numero);
-            push(pilha, leitura, 1);
-            salto = contaAlg(leitura.numero);
+            sscanf(entrada, "%d", &leitura);
+            if(pilhaChar->caractere[pilhaChar->topo] == '-'){
+                leitura*=-1;
+                pilhaChar->caractere[pilhaChar->topo] = '+';
             }
-        else{
-            if(entrada[0] == '+' ||entrada[0] == '-'){
-                while(pilhaTemp->elementos[pilhaTemp->topo].dado.operador == '*' || pilhaTemp->elementos[pilhaTemp->topo].dado.operador == '/'){
-                    leitura = pop(pilhaTemp);
-                    push(pilha, leitura, 2);
-                }
-                leitura.operador = entrada[0];
-                push(pilhaTemp, leitura, 2);
-            }
+            pushInt(pilhaInt, leitura);
+            salto = contaAlg(leitura);
+            entrada = entrada+salto;
+        }
+
+        if(strlen(entrada)>0){
+
+            if(entrada[0] == '(') pushChar(pilhaChar, entrada[0]);
+
             else if(entrada[0] == ')'){
-                while(pilhaTemp->elementos[pilhaTemp->topo].dado.operador != '('){
-                    leitura = pop(pilhaTemp);
-                    push(pilha, leitura, 2);
+                while (pilhaChar->caractere[pilhaChar->topo] != '('){   
+                    oper = popChar(pilhaChar);
+                    num1 = popInt(pilhaInt);
+                    num2 = popInt(pilhaInt);
+                    pushInt(pilhaInt, calcula(num2, num1, oper));
                 }
-                pop(pilhaTemp);
+                popChar(pilhaChar);
             }
-            else{
-                leitura.operador = entrada[0];
-                push(pilhaTemp, leitura, 2);
+
+            else if(pilhaInt->topo>=2 && (pilhaChar->caractere[pilhaChar->topo] =='*'|| pilhaChar->caractere[pilhaChar->topo]=='/')){
+                oper = popChar(pilhaChar);
+                num1 = popInt(pilhaInt);
+                num2 = popInt(pilhaInt);
+                pushInt(pilhaInt, calcula(num2, num1, oper));
+                pushChar(pilhaChar, entrada[0]);
             }
-            salto=1;
-        }
-        entrada = entrada+salto;
-    }
-    
-    while(pilhaTemp->topo!=-1){
-        push(pilha, pop(pilhaTemp), 2);
+
+            else pushChar(pilhaChar, entrada[0]);  
+
+            entrada=entrada+1;   
+        } 
     }
 
-    printf("\nPilha:\n\n");
+    while(pilhaInt->topo!=0){
+        oper = popChar(pilhaChar);
+        num1 = popInt(pilhaInt);
+        num2 = popInt(pilhaInt);
+        pushInt(pilhaInt, calcula(num2, num1, oper));
+    }
 
-    for(int i=pilha->topo; i>-1; i--){
-        if(pilha->elementos[i].tipoDado == 1){
-            printf("Topo %d: %d\n", i, pilha->elementos[i].dado);
-        } 
-        else{
-            printf("Topo %d: %c\n", i, pilha->elementos[i].dado);
-        } 
-    } 
-
-    pilha = inverte(pilha);
-    printf("\nPilha invertida:\n\n");    
-
-    for(int i=pilha->topo; i>-1; i--){
-        if(pilha->elementos[i].tipoDado == 1){
-            printf("Topo %d: %d\n", i, pilha->elementos[i].dado);
-        } 
-        else{
-            printf("Topo %d: %c\n", i, pilha->elementos[i].dado);
-        } 
-    } 
-    
-    printf("o topo da pilha original eh %d\n", pilha->topo);
-
-    /* while(pilha->topo!=-1){
-        printf("elemento %d, tipo %d", pilha->elementos[pilha->topo].dado, pilha->elementos[pilha->topo].tipoDado);
-        if(pilha->elementos[pilha->topo].tipoDado == 1){
-            push(pilhaTemp, pop(pilha), 1);
-            printf("coloquei %d\n", pilhaTemp->elementos[pilhaTemp->topo].dado);
-        }
-        else{
-        }       
-    }  */
-
-    printf("\nTempultado: %d", pilhaTemp->elementos[pilhaTemp->topo].dado.numero); 
-
+    printf("Resultado: %d ", pilhaInt->numero[pilhaInt->topo]);
 
 }
-

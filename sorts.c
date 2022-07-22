@@ -1,101 +1,61 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <string.h> 
-//Inseri a string.h para checar as strings do argv[] e verificar se o usuário digitou corretamente.
-
-void bubbleSort(int *vetor, int tam);
-void selectSort(int *vetor, int tam);
-void merge(int *vetor, int inicio, int meio, int fim);
-void mergeSort(int *vetor, int inicio, int fim);
-int particiona(int *vetor, int inicio, int fim);
-void quickSort(int *vetor, int inicio, int fim);
-void troca(int *vetor, int i, int j);
-
-int main(int argc, char *argv[]){
-
-    int *vetor = (int *) malloc(atoi(argv[2]) * sizeof(int));
-
-    srand(time(NULL));
-    for(int k=0; k<atoi(argv[2]); k++) vetor[k] = rand()%100;
-
-    clock_t tempoInicio;
-    
-    printf("\nVetor original:\n");
-    for(int k=0; k<atoi(argv[2]); k++) printf("%d ", vetor[k]);
-    
-    if(argc > 4 || argc < 3 || strcmp(argv[1], "-n") != 0){
-        printf("Os parametros nao foram passados corretamente.");
-        return 1;
-    }
-    if(argc == 3){
-        printf("\n\n----Usando BubbleSort----\n\n");
-        tempoInicio = clock();
-        bubbleSort(vetor, atoi(argv[2]));
-    }
-    else if (strcmp(argv[3], "-m")== 0){            
-        printf("\n\nUsando MergeSort\n\n");
-        tempoInicio = clock();
-        mergeSort(vetor, 0, atoi(argv[2])-1);
-    }
-    else if (strcmp(argv[3], "-q") == 0 ){
-        printf("\n\n----Usando QuickSort----\n\n");
-        tempoInicio = clock();
-        quickSort(vetor, 0, atoi(argv[2])-1);
-    }
-    else {
-        printf("Os parâmetros não foram passados corretamente.\nInsira uma letra que indique um metodo valido de ordenacao.");
-        return 1;
-    }
-
-    clock_t tempoFim = clock();
-    
-    printf("Vetor ordenado:\n");
-    for(int k=0;k<atoi(argv[2]); k++) printf("%d ", vetor[k]);
-    
-    printf("\n\nO tempo gasto para a execucao foi de %f segundos\n", (double)(tempoFim - tempoInicio) / CLOCKS_PER_SEC);
-
-    return 0;
+#define TAM 100000
+typedef struct _art{
+    int peso, vert1, vert2;
+} art;
+typedef struct _grf{
+    art* arestas;
+    int* pais;
+    int* ranks;
+} grf;
+art initAresta(){
+    art aresta;
+    aresta.peso = 0;
+    aresta.vert1 = 0;
+    aresta.vert2 = 0;
+    return aresta;
 }
+art montaAresta(int v1, int v2, int peso){
+    art aresta;
+    aresta.peso = peso;
+    aresta.vert1 = v1;
+    aresta.vert2 = v2;
+    return aresta;
+}
+grf* initGrafo(int num_vert, int num_arestas){
 
-void bubbleSort(int *vetor, int tam) {
-    
-    int temp;
-    for (int i=1; i<tam; i++) {
-        for (int j=0; j<tam-1; j++) {
-            if (vetor[j]>vetor[j+1]){
-                temp = vetor[j];
-                vetor[j] = vetor[j+1];
-                vetor[j+1] = temp;
+    int i;
+    grf* grafo = malloc(sizeof(grf));
+    grafo->ranks = calloc((num_vert+1),sizeof(int));
+    grafo->pais = calloc((num_vert+1),sizeof(int));
+    for(i=1; i<(num_vert+1);i++){
+        grafo->pais[i]=i;
+        grafo->ranks[i]=0;
+    }   
+}
+    }   
             }
-        }
+    }   
+    grafo->arestas = malloc(num_arestas*sizeof(art));
+    for(int i = 0; i<num_arestas; i++){
+      grafo->arestas[i] = initAresta();
     }
+    return grafo;
 }
-
-void selectSort(int *vetor, int tam){
-
-    int temp;
-    for(int i=0; i<tam; i++){
-        for(int j=i+1; j<tam; j++){
-            if(vetor[i]>vetor[j]){
-                temp = vetor[j];
-                vetor[j] = vetor[i];
-                vetor[i] = temp;
-            }
-        }
-    }
-}
-
-void mergeSort(int *vetor, int inicio, int fim){
-
-    if(inicio<fim){
-        int meio = (inicio+fim)/2;
-        mergeSort(vetor, inicio, meio);
-        mergeSort(vetor, meio+1, fim);
-        merge(vetor, inicio, meio, fim);
-    }
+int find(grf* grafo, int vert){
     
+    if (grafo->pais[vert] = vert) return vert;
+    else return find(grafo, grafo->pais[vert]);
 }
+
+int uniao(grf* grafo, int vert1, int vert2){
+    int pai_v1 = find(grafo, vert1);
+    int pai_v2 = find(grafo, vert2);
+    if (grafo->ranks[pai_v1] == grafo->ranks[pai_v1]){
+        grafo->pais[pai_v1] = pai_v2;
+        grafo->ranks[pai_v2]++;
+    }
 
 void merge(int *vetor, int inicio, int meio, int fim){
 
@@ -108,42 +68,42 @@ void merge(int *vetor, int inicio, int meio, int fim){
         if(vetor[i]<=vetor[j]) temp[pos++] = vetor[i++];
         else temp[pos++] = vetor[j++];
     }
-    while(i<=meio) temp[pos++] = vetor[i++];
-    while(j<=fim) temp[pos++] = vetor[j++];
-
-    for(int k=inicio; k<=fim; k++) vetor[k]=temp[k-inicio];
-    free(temp);
-}
-
-void quickSort(int *vetor, int inicio, int fim){
-    if (fim>inicio){
-        int posPivot = particiona(vetor, inicio, fim);
-        quickSort(vetor, inicio, posPivot-1);
-        quickSort(vetor, posPivot+1, fim);
+void ordena(grf* grafo, int num_art){
+    art temp;
+    int i,j;
+    int tam = num_art;
+    art* resultado = malloc(num_art*sizeof(art));
+    for (i=0; i<tam-1; i++) {
+        printf("%d",grafo->arestas[i]);
     }
 }
-
-int particiona(int *vetor, int inicio, int fim){
-    
-    int posPivot = inicio + rand()%(fim-inicio+1);
-    int pivot = vetor[posPivot];
-    troca(vetor, inicio, posPivot);
-    int i = inicio;
-    int j = fim;
-    while(i<j){
-        while(vetor[i]<=pivot && i<fim) i++;
-        while(vetor[j]>pivot && j>inicio) j--;
-        if(i<j) troca(vetor, i, j);       
+int kruskal(grf* grafo, int num_art){
+    int j, peso_final =0, tam = num_art;
+    for (j=1; j<tam; j++) {
+        art aresta = grafo->arestas[j];
+        if( find(grafo, aresta.vert1) != find(grafo, aresta.vert2) ){ // se estiverem em componentes distintas
+            uniao(grafo, aresta.vert1, aresta.vert2);
+            peso_final += aresta.peso;
+        }
     }
-    troca(vetor, inicio, j);
-    return j;
+    return peso_final;
 }
-
-void troca(int *vetor, int pos1, int pos2){
-    int temp = vetor[pos1];
-    vetor[pos1] = vetor[pos2];
-    vetor[pos2] = temp;
+int main(){
+    grf* grafo = initGrafo(10,13);
+    grafo->arestas[0] = montaAresta(0,0,0);
+    grafo->arestas[1] = montaAresta(1,2,1);
+    grafo->arestas[2] = montaAresta(2,3,3);
+    grafo->arestas[3] = montaAresta(3,4,1);
+    grafo->arestas[4] = montaAresta(4,5,1);
+    grafo->arestas[5] = montaAresta(5,6,4);
+    grafo->arestas[6] = montaAresta(6,7,2);
+    grafo->arestas[7] = montaAresta(7,8,1);
+    grafo->arestas[8] = montaAresta(4,8,3);
+    grafo->arestas[9] = montaAresta(8,9,2);
+    grafo->arestas[10] = montaAresta(9,3,1);
+    grafo->arestas[11] = montaAresta(9,10,1);
+    grafo->arestas[12] = montaAresta(1,10,3);
+    printf("%d %d",grafo->arestas[1].peso,grafo->arestas[2].peso);
+    ordena(&grafo,12);
+    int resultado = kruskal(grafo,12);
 }
-
-
-
